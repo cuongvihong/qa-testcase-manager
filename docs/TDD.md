@@ -4,6 +4,11 @@ Tài liệu này mô tả thiết kế kỹ thuật, dựa trên FSD đã đư�
 
 ## CHANGELOG
 
+**2026-09-22, Increment 2 — Category route corrected + Report scope trimmed**
+
+- Mục 5.7: route Category viết sai phạm vi (`GET /api/suites/:suiteId/categories`, theo 1 suite), không khớp mô tả FSD mục 5.2 (Category lọc suite/case theo module trong toàn bộ loại test, cùng phạm vi với tab Test Suite). Route đúng: `GET /api/products/:productId/test-types/:testTypeId/categories`.
+- Mục 5.9: Report Increment 2 chỉ xuất CSV (thư viện chuẩn Python, không thêm dependency). PDF (reportlab) và Excel (openpyxl) hoãn sang Increment 3.
+
 **2026-09-22, Increment 1 — Deviation: Backend Node/Express/TS/Prisma → Python/FastAPI/SQLModel**
 
 Lý do: nguồn dữ liệu automation-ingest chính (dự án `AIQA`, bộ test thật dùng để chứng minh tích hợp) dùng `pytest-playwright` (Python), không phải Playwright Test (JS) — không thể implement `Reporter` interface như mục 7.1 mô tả cho môi trường JS. Viết backend bằng Python để cùng hệ sinh thái với reporter/plugin phía nguồn test, tránh phải gọi chéo runtime JS↔Python cho một tác vụ vốn chỉ là gọi HTTP.

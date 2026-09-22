@@ -17,6 +17,7 @@ interface TestExplorerState {
   selectTestType: (testTypeId: number) => Promise<void>
   selectSuite: (suiteId: number) => Promise<void>
   selectCase: (caseId: number) => Promise<void>
+  retryCase: (caseId: number) => Promise<void>
 }
 
 const initialState = {
@@ -64,6 +65,12 @@ export const useTestExplorer = create<TestExplorerState>((set, get) => ({
 
   async selectCase(caseId) {
     set({ selectedCaseId: caseId })
+    const caseDetail = await api.getCase(caseId)
+    set({ caseDetail })
+  },
+
+  async retryCase(caseId) {
+    await api.retryCase(caseId)
     const caseDetail = await api.getCase(caseId)
     set({ caseDetail })
   },

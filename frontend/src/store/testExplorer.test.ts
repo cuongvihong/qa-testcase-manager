@@ -7,6 +7,7 @@ const mockApi = {
   listSuites: vi.fn(),
   listCases: vi.fn(),
   getCase: vi.fn(),
+  retryCase: vi.fn(),
 }
 
 vi.mock('../api/client', () => ({ api: mockApi }))
@@ -114,5 +115,21 @@ describe('selectCase', () => {
     const state = useTestExplorer.getState()
     expect(state.selectedCaseId).toBe(100)
     expect(state.caseDetail).toEqual(detail)
+  })
+})
+
+describe('retryCase', () => {
+  it('posts the retry and refreshes the case detail so the new run appears', async () => {
+    const newRun = { id: 200, test_case_id: 100, result: 'Pass', retry_of_run_id: 1 }
+    const refreshedDetail = { case: testCase, runs: [newRun] }
+    mockApi.retryCase.mockResolvedValue(newRun)
+    mockApi.getCase.mockResolvedValue(refreshedDetail)
+    useTestExplorer.setState({ selectedCaseId: 100 })
+
+    await useTestExplorer.getState().retryCase(100)
+
+    expect(mockApi.retryCase).toHaveBeenCalledWith(100)
+    expect(mockApi.getCase).toHaveBeenCalledWith(100)
+    expect(useTestExplorer.getState().caseDetail).toEqual(refreshedDetail)
   })
 })

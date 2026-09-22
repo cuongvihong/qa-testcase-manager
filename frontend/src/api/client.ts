@@ -1,4 +1,4 @@
-import type { CaseDetail, Product, TestCase, TestSuite, TestType } from './types'
+import type { CaseDetail, Product, TestCase, TestRun, TestSuite, TestType } from './types'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const resp = await fetch(`/api${path}`, {
@@ -18,4 +18,5 @@ export const api = {
     request<TestSuite[]>(`/products/${productId}/test-types/${testTypeId}/suites`),
   listCases: (suiteId: number) => request<TestCase[]>(`/suites/${suiteId}/cases`),
   getCase: (caseId: number) => request<CaseDetail>(`/cases/${caseId}`),
+  retryCase: (caseId: number) => request<TestRun>(`/cases/${caseId}/retry`, { method: 'POST' }),
 }

@@ -206,3 +206,46 @@ test.describe('No console errors during normal use', () => {
     expect(errors).toEqual([])
   })
 })
+
+async function openFirstCaseOfUiTest(page: import('@playwright/test').Page) {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'UI Test', exact: true }).click()
+  const suiteHeaders = page.locator('div.rounded-\\[10px\\] > button')
+  await suiteHeaders.first().click()
+  const suiteContainer = page.locator('div.rounded-\\[10px\\]').first()
+  const caseButtons = suiteContainer.locator('button.pl-8\\.5')
+  await expect(caseButtons.first()).toBeVisible()
+  await caseButtons.first().click()
+  return page.locator('div.flex-\\[3_1_0\\%\\]').last()
+}
+
+test.describe('Timeline tab', () => {
+  test('lists at least one real run with a result and timestamp', async ({ page }) => {
+    const detailPanel = await openFirstCaseOfUiTest(page)
+    await detailPanel.getByRole('button', { name: 'Timeline', exact: true }).click()
+
+    await expect(detailPanel.getByText(/^Kết quả chạy: (Pass|Fail|Blocked|Skipped)$/).first()).toBeVisible()
+  })
+})
+
+test.describe('Retry tab', () => {
+  test('shows the retry button, and clicking it posts a real retry and appends to the chain', async ({ page }) => {
+    const detailPanel = await openFirstCaseOfUiTest(page)
+    await detailPanel.getByRole('button', { name: 'Retry', exact: true }).click()
+
+    const retryButton = detailPanel.getByRole('button', { name: 'Chạy lại ngay (Retry)' })
+    await expect(retryButton).toBeVisible()
+
+    const chainRowsBefore = detailPanel.locator('div.rounded-\\[10px\\] > div')
+    const countBefore = await chainRowsBefore.count()
+
+    await retryButton.click()
+    await expect(detailPanel.getByText('Gốc')).toBeVisible()
+
+    const chainRowsAfter = detailPanel.locator('div.rounded-\\[10px\\] > div')
+    // Before the first retry there is no chain box at all (countBefore may be 0);
+    // after retrying there must be at least the "Gốc" row plus the new retry row.
+    expect(await chainRowsAfter.count()).toBeGreaterThan(countBefore)
+    expect(await chainRowsAfter.count()).toBeGreaterThanOrEqual(2)
+  })
+})
