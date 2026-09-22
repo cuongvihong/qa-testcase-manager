@@ -8,6 +8,8 @@ const mockApi = {
   listCases: vi.fn(),
   getCase: vi.fn(),
   retryCase: vi.fn(),
+  listEnvironments: vi.fn(),
+  createEnvironment: vi.fn(),
 }
 
 vi.mock('../api/client', () => ({ api: mockApi }))
@@ -131,5 +133,39 @@ describe('retryCase', () => {
     expect(mockApi.retryCase).toHaveBeenCalledWith(100)
     expect(mockApi.getCase).toHaveBeenCalledWith(100)
     expect(useTestExplorer.getState().caseDetail).toEqual(refreshedDetail)
+  })
+})
+
+describe('environments', () => {
+  const env = { id: 1, product_id: 1, name: 'Staging', device_info: null }
+
+  it('loadEnvironments fetches for the currently selected product', async () => {
+    mockApi.listEnvironments.mockResolvedValue([env])
+    useTestExplorer.setState({ selectedProductId: 1 })
+
+    await useTestExplorer.getState().loadEnvironments()
+
+    expect(mockApi.listEnvironments).toHaveBeenCalledWith(1)
+    expect(useTestExplorer.getState().environments).toEqual([env])
+  })
+
+  it('loadEnvironments is a no-op when no product is selected yet', async () => {
+    useTestExplorer.setState({ selectedProductId: null })
+
+    await useTestExplorer.getState().loadEnvironments()
+
+    expect(mockApi.listEnvironments).not.toHaveBeenCalled()
+  })
+
+  it('createEnvironment posts then refreshes the environment list', async () => {
+    mockApi.createEnvironment.mockResolvedValue(env)
+    mockApi.listEnvironments.mockResolvedValue([env])
+    useTestExplorer.setState({ selectedProductId: 1 })
+
+    await useTestExplorer.getState().createEnvironment('Staging', null)
+
+    expect(mockApi.createEnvironment).toHaveBeenCalledWith(1, 'Staging', null)
+    expect(mockApi.listEnvironments).toHaveBeenCalledWith(1)
+    expect(useTestExplorer.getState().environments).toEqual([env])
   })
 })

@@ -59,3 +59,10 @@ export interface CaseDetail {
   case: TestCase
   runs: TestRun[]
 }
+
+export interface Environment {
+  id: number
+  product_id: number
+  name: string
+  device_info: string | null
+}

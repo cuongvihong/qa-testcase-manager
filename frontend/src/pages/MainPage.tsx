@@ -1,6 +1,6 @@
 import { CaseDetailPanel } from '../components/CaseDetailPanel'
+import { Panel1 } from '../components/Panel1'
 import { Sidebar } from '../components/Sidebar'
-import { SuiteList } from '../components/SuiteList'
 import { TopBar } from '../components/TopBar'
 
 export function MainPage() {
@@ -9,7 +9,7 @@ export function MainPage() {
       <TopBar />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <SuiteList />
+        <Panel1 />
         <CaseDetailPanel />
       </div>
     </div>

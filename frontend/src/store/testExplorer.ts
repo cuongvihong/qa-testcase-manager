@@ -1,12 +1,13 @@
 import { create } from 'zustand'
 import { api } from '../api/client'
-import type { CaseDetail, Product, TestCase, TestSuite, TestType } from '../api/types'
+import type { CaseDetail, Environment, Product, TestCase, TestSuite, TestType } from '../api/types'
 
 interface TestExplorerState {
   products: Product[]
   testTypes: TestType[]
   suites: TestSuite[]
   cases: TestCase[]
+  environments: Environment[]
   selectedProductId: number | null
   selectedTestTypeId: number | null
   selectedSuiteId: number | null
@@ -18,6 +19,8 @@ interface TestExplorerState {
   selectSuite: (suiteId: number) => Promise<void>
   selectCase: (caseId: number) => Promise<void>
   retryCase: (caseId: number) => Promise<void>
+  loadEnvironments: () => Promise<void>
+  createEnvironment: (name: string, deviceInfo: string | null) => Promise<void>
 }
 
 const initialState = {
@@ -25,6 +28,7 @@ const initialState = {
   testTypes: [],
   suites: [],
   cases: [],
+  environments: [],
   selectedProductId: null,
   selectedTestTypeId: null,
   selectedSuiteId: null,
@@ -73,5 +77,20 @@ export const useTestExplorer = create<TestExplorerState>((set, get) => ({
     await api.retryCase(caseId)
     const caseDetail = await api.getCase(caseId)
     set({ caseDetail })
+  },
+
+  async loadEnvironments() {
+    const { selectedProductId } = get()
+    if (selectedProductId === null) return
+    const environments = await api.listEnvironments(selectedProductId)
+    set({ environments })
+  },
+
+  async createEnvironment(name, deviceInfo) {
+    const { selectedProductId } = get()
+    if (selectedProductId === null) return
+    await api.createEnvironment(selectedProductId, name, deviceInfo)
+    const environments = await api.listEnvironments(selectedProductId)
+    set({ environments })
   },
 }))

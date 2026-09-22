@@ -236,16 +236,51 @@ test.describe('Retry tab', () => {
     const retryButton = detailPanel.getByRole('button', { name: 'Chạy lại ngay (Retry)' })
     await expect(retryButton).toBeVisible()
 
-    const chainRowsBefore = detailPanel.locator('div.rounded-\\[10px\\] > div')
-    const countBefore = await chainRowsBefore.count()
+    const chainRows = detailPanel.locator('div.rounded-\\[10px\\] > div')
+    const countBefore = await chainRows.count()
 
     await retryButton.click()
-    await expect(detailPanel.getByText('Gốc')).toBeVisible()
+    // "Gốc" text can already be visible from the PREVIOUS chain state while the retry is
+    // still in flight (the button shows "Đang chạy lại..." and is disabled) — waiting on
+    // it alone doesn't prove the refetch finished. Wait for the button to re-enable first.
+    await expect(retryButton).toBeEnabled()
 
-    const chainRowsAfter = detailPanel.locator('div.rounded-\\[10px\\] > div')
-    // Before the first retry there is no chain box at all (countBefore may be 0);
-    // after retrying there must be at least the "Gốc" row plus the new retry row.
-    expect(await chainRowsAfter.count()).toBeGreaterThan(countBefore)
-    expect(await chainRowsAfter.count()).toBeGreaterThanOrEqual(2)
+    // The chain must have grown by exactly one new row, and must include the "Gốc" +
+    // at least one "Retry N" row now that a retry has actually happened.
+    await expect(chainRows).toHaveCount(countBefore + 1)
+    await expect(detailPanel.getByText('Gốc')).toBeVisible()
+    expect(await chainRows.count()).toBeGreaterThanOrEqual(2)
+  })
+})
+
+test.describe('Environment tab', () => {
+  test('creating a new environment persists it and shows it in the list after reload', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Environment', exact: true }).click()
+
+    const uniqueName = `E2E-Staging-${Date.now()}`
+    const uniqueDeviceInfo = `Chrome 128, Windows 11 (${Date.now()})`
+    await page.getByPlaceholder('Tên môi trường, ví dụ Staging').fill(uniqueName)
+    await page.getByPlaceholder(/Thiết bị/).fill(uniqueDeviceInfo)
+    await page.getByRole('button', { name: 'Thêm', exact: true }).click()
+
+    const row = page.locator('div', { hasText: uniqueName }).last()
+    await expect(row.getByText(uniqueDeviceInfo)).toBeVisible()
+
+    // Reload to prove it was actually persisted server-side, not just optimistic local state.
+    await page.reload()
+    await page.getByRole('button', { name: 'Environment', exact: true }).click()
+    await expect(page.getByText(uniqueName)).toBeVisible()
+  })
+
+  test('the Add button is disabled until a name is typed', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Environment', exact: true }).click()
+
+    const addButton = page.getByRole('button', { name: 'Thêm', exact: true })
+    await expect(addButton).toBeDisabled()
+
+    await page.getByPlaceholder('Tên môi trường, ví dụ Staging').fill('Prod')
+    await expect(addButton).toBeEnabled()
   })
 })
