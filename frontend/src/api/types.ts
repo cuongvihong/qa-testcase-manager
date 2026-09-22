@@ -73,3 +73,18 @@ export interface Category {
   caseCount: number
   passRate: number
 }
+
+export interface Requirement {
+  id: number
+  product_id: number
+  title: string
+  description: string
+  created_at: string
+}
+
+export interface TraceabilityRow {
+  requirementId: number
+  title: string
+  caseIds: number[]
+  covered: boolean
+}

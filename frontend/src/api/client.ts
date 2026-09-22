@@ -1,4 +1,15 @@
-import type { CaseDetail, Category, Environment, Product, TestCase, TestRun, TestSuite, TestType } from './types'
+import type {
+  CaseDetail,
+  Category,
+  Environment,
+  Product,
+  Requirement,
+  TestCase,
+  TestRun,
+  TestSuite,
+  TestType,
+  TraceabilityRow,
+} from './types'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const resp = await fetch(`/api${path}`, {
@@ -27,4 +38,17 @@ export const api = {
     }),
   listCategories: (productId: number, testTypeId: number) =>
     request<Category[]>(`/products/${productId}/test-types/${testTypeId}/categories`),
+  listRequirements: (productId: number) => request<Requirement[]>(`/products/${productId}/requirements`),
+  createRequirement: (productId: number, title: string, description: string) =>
+    request<Requirement>('/requirements', {
+      method: 'POST',
+      body: JSON.stringify({ product_id: productId, title, description }),
+    }),
+  linkCase: (requirementId: number, testCaseId: number) =>
+    request(`/requirements/${requirementId}/link-case`, {
+      method: 'POST',
+      body: JSON.stringify({ test_case_id: testCaseId }),
+    }),
+  getTraceabilityMatrix: (productId: number) =>
+    request<TraceabilityRow[]>(`/products/${productId}/traceability-matrix`),
 }

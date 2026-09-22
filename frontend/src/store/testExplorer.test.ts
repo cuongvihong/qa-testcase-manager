@@ -11,6 +11,10 @@ const mockApi = {
   listEnvironments: vi.fn(),
   createEnvironment: vi.fn(),
   listCategories: vi.fn(),
+  listRequirements: vi.fn(),
+  createRequirement: vi.fn(),
+  linkCase: vi.fn(),
+  getTraceabilityMatrix: vi.fn(),
 }
 
 vi.mock('../api/client', () => ({ api: mockApi }))
@@ -190,5 +194,48 @@ describe('categories', () => {
 
     useTestExplorer.getState().selectCategory(null)
     expect(useTestExplorer.getState().selectedCategoryModule).toBeNull()
+  })
+})
+
+describe('requirements', () => {
+  const req = { id: 1, product_id: 1, title: 'Dang nhap duoc', description: '', created_at: '' }
+  const matrix = [{ requirementId: 1, title: 'Dang nhap duoc', caseIds: [], covered: false }]
+
+  it('loadRequirements fetches both the requirement list and the traceability matrix for the selected product', async () => {
+    mockApi.listRequirements.mockResolvedValue([req])
+    mockApi.getTraceabilityMatrix.mockResolvedValue(matrix)
+    useTestExplorer.setState({ selectedProductId: 1 })
+
+    await useTestExplorer.getState().loadRequirements()
+
+    expect(mockApi.listRequirements).toHaveBeenCalledWith(1)
+    expect(mockApi.getTraceabilityMatrix).toHaveBeenCalledWith(1)
+    expect(useTestExplorer.getState().requirements).toEqual([req])
+    expect(useTestExplorer.getState().traceabilityMatrix).toEqual(matrix)
+  })
+
+  it('createRequirement posts then refreshes requirements + matrix', async () => {
+    mockApi.createRequirement.mockResolvedValue(req)
+    mockApi.listRequirements.mockResolvedValue([req])
+    mockApi.getTraceabilityMatrix.mockResolvedValue(matrix)
+    useTestExplorer.setState({ selectedProductId: 1 })
+
+    await useTestExplorer.getState().createRequirement('Dang nhap duoc', '')
+
+    expect(mockApi.createRequirement).toHaveBeenCalledWith(1, 'Dang nhap duoc', '')
+    expect(useTestExplorer.getState().requirements).toEqual([req])
+  })
+
+  it('linkCaseToRequirement posts then refreshes the matrix so coverage updates', async () => {
+    mockApi.linkCase.mockResolvedValue({})
+    const coveredMatrix = [{ requirementId: 1, title: 'Dang nhap duoc', caseIds: [42], covered: true }]
+    mockApi.getTraceabilityMatrix.mockResolvedValue(coveredMatrix)
+    mockApi.listRequirements.mockResolvedValue([req])
+    useTestExplorer.setState({ selectedProductId: 1 })
+
+    await useTestExplorer.getState().linkCaseToRequirement(1, 42)
+
+    expect(mockApi.linkCase).toHaveBeenCalledWith(1, 42)
+    expect(useTestExplorer.getState().traceabilityMatrix).toEqual(coveredMatrix)
   })
 })

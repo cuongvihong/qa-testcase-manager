@@ -1,6 +1,16 @@
 import { create } from 'zustand'
 import { api } from '../api/client'
-import type { CaseDetail, Category, Environment, Product, TestCase, TestSuite, TestType } from '../api/types'
+import type {
+  CaseDetail,
+  Category,
+  Environment,
+  Product,
+  Requirement,
+  TestCase,
+  TestSuite,
+  TestType,
+  TraceabilityRow,
+} from '../api/types'
 
 interface TestExplorerState {
   products: Product[]
@@ -9,6 +19,8 @@ interface TestExplorerState {
   cases: TestCase[]
   environments: Environment[]
   categories: Category[]
+  requirements: Requirement[]
+  traceabilityMatrix: TraceabilityRow[]
   selectedProductId: number | null
   selectedTestTypeId: number | null
   selectedSuiteId: number | null
@@ -25,6 +37,9 @@ interface TestExplorerState {
   createEnvironment: (name: string, deviceInfo: string | null) => Promise<void>
   loadCategories: () => Promise<void>
   selectCategory: (module: string | null) => void
+  loadRequirements: () => Promise<void>
+  createRequirement: (title: string, description: string) => Promise<void>
+  linkCaseToRequirement: (requirementId: number, testCaseId: number) => Promise<void>
 }
 
 const initialState = {
@@ -34,6 +49,8 @@ const initialState = {
   cases: [],
   environments: [],
   categories: [],
+  requirements: [],
+  traceabilityMatrix: [],
   selectedProductId: null,
   selectedTestTypeId: null,
   selectedSuiteId: null,
@@ -117,5 +134,34 @@ export const useTestExplorer = create<TestExplorerState>((set, get) => ({
 
   selectCategory(module) {
     set({ selectedCategoryModule: module })
+  },
+
+  async loadRequirements() {
+    const { selectedProductId } = get()
+    if (selectedProductId === null) return
+    const [requirements, traceabilityMatrix] = await Promise.all([
+      api.listRequirements(selectedProductId),
+      api.getTraceabilityMatrix(selectedProductId),
+    ])
+    set({ requirements, traceabilityMatrix })
+  },
+
+  async createRequirement(title, description) {
+    const { selectedProductId } = get()
+    if (selectedProductId === null) return
+    await api.createRequirement(selectedProductId, title, description)
+    const [requirements, traceabilityMatrix] = await Promise.all([
+      api.listRequirements(selectedProductId),
+      api.getTraceabilityMatrix(selectedProductId),
+    ])
+    set({ requirements, traceabilityMatrix })
+  },
+
+  async linkCaseToRequirement(requirementId, testCaseId) {
+    const { selectedProductId } = get()
+    await api.linkCase(requirementId, testCaseId)
+    if (selectedProductId === null) return
+    const traceabilityMatrix = await api.getTraceabilityMatrix(selectedProductId)
+    set({ traceabilityMatrix })
   },
 }))

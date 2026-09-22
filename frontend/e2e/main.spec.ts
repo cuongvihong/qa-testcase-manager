@@ -308,3 +308,50 @@ test.describe('Category tab', () => {
     await expect(page.getByRole('button', { name: '← Tất cả Category' })).toHaveCount(0)
   })
 })
+
+test.describe('Requirement tab', () => {
+  test('creating a requirement, linking a real case, and exporting CSV all work against real data', async ({ page }) => {
+    // Discover a real case id from the UI itself (no hardcoded id).
+    await page.goto('/')
+    await page.getByRole('button', { name: 'UI Test', exact: true }).click()
+    const suiteHeaders = page.locator('div.rounded-\\[10px\\] > button')
+    await suiteHeaders.first().click()
+    const caseButton = page.locator('button.pl-8\\.5').first()
+    await expect(caseButton).toBeVisible()
+    const realCaseId = await caseButton.getAttribute('data-case-id')
+    expect(realCaseId).not.toBeNull()
+
+    await page.getByRole('button', { name: 'Requirement', exact: true }).click()
+
+    const uniqueTitle = `E2E-Requirement-${Date.now()}`
+    await page.getByPlaceholder('Tiêu đề yêu cầu').fill(uniqueTitle)
+    await page.getByRole('button', { name: 'Thêm', exact: true }).click()
+
+    const row = page.locator('div.rounded-\\[10px\\]', { hasText: uniqueTitle })
+    await expect(row.getByText('Chưa có Test Case nào cover')).toBeVisible()
+
+    await row.getByPlaceholder('ID Test Case').fill(realCaseId!)
+    await row.getByRole('button', { name: 'Gắn Test Case', exact: true }).click()
+
+    // Badge must flip from uncovered (red) to covered (green) with the real case counted.
+    await expect(row.getByText('1 case cover')).toBeVisible()
+    await expect(row.getByText('Chưa có Test Case nào cover')).toHaveCount(0)
+
+    // Export button becomes clickable once there's data; a real click shouldn't throw.
+    const exportButton = page.getByRole('button', { name: 'Xuất Traceability Matrix (CSV)' })
+    await expect(exportButton).toBeEnabled()
+    const [download] = await Promise.all([page.waitForEvent('download'), exportButton.click()])
+    expect(download.suggestedFilename()).toBe('traceability-matrix.csv')
+  })
+
+  test('the Add button is disabled until a title is typed', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Requirement', exact: true }).click()
+
+    const addButton = page.getByRole('button', { name: 'Thêm', exact: true })
+    await expect(addButton).toBeDisabled()
+
+    await page.getByPlaceholder('Tiêu đề yêu cầu').fill('X')
+    await expect(addButton).toBeEnabled()
+  })
+})

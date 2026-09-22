@@ -37,6 +37,7 @@ export function SuiteCard({ suite }: { suite: TestSuite }) {
           {cases.map((c) => (
             <button
               key={c.id}
+              data-case-id={c.id}
               onClick={() => selectCase(c.id)}
               className={`flex w-full items-center gap-2.5 border-t border-[#F0EEE9] px-3.5 py-2.5 pl-8.5 text-left ${
                 c.id === selectedCaseId ? 'bg-[#FDEEEE]' : 'bg-white'
