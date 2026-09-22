@@ -1,4 +1,4 @@
-import type { CaseDetail, Environment, Product, TestCase, TestRun, TestSuite, TestType } from './types'
+import type { CaseDetail, Category, Environment, Product, TestCase, TestRun, TestSuite, TestType } from './types'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const resp = await fetch(`/api${path}`, {
@@ -25,4 +25,6 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ product_id: productId, name, device_info: deviceInfo }),
     }),
+  listCategories: (productId: number, testTypeId: number) =>
+    request<Category[]>(`/products/${productId}/test-types/${testTypeId}/categories`),
 }

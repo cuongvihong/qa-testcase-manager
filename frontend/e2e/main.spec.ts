@@ -284,3 +284,27 @@ test.describe('Environment tab', () => {
     await expect(addButton).toBeEnabled()
   })
 })
+
+test.describe('Category tab', () => {
+  test('lists real modules with case count + pass rate, and clicking one filters suites by it', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'UI Test', exact: true }).click()
+    await page.getByRole('button', { name: 'Category', exact: true }).click()
+
+    const categoryButtons = page.locator('button', { hasText: /case ·.*% pass/ })
+    await expect(categoryButtons.first()).toBeVisible()
+    const moduleName = (await categoryButtons.first().locator('span').first().textContent())!.trim()
+
+    await categoryButtons.first().click()
+
+    await expect(page.getByRole('button', { name: '← Tất cả Category' })).toBeVisible()
+    await expect(page.getByText(moduleName, { exact: true })).toBeVisible()
+    // Filtering must actually narrow the suite list, not just relabel it — expect at
+    // least one real suite card to render under the selected module.
+    const suiteHeaders = page.locator('div.rounded-\\[10px\\] > button')
+    await expect(suiteHeaders.first()).toBeVisible()
+
+    await page.getByRole('button', { name: '← Tất cả Category' }).click()
+    await expect(page.getByRole('button', { name: '← Tất cả Category' })).toHaveCount(0)
+  })
+})

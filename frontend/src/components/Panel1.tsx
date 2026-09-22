@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CategoryTab } from './CategoryTab'
 import { EnvironmentTab } from './EnvironmentTab'
 import { TestSuiteTab } from './TestSuiteTab'
 
@@ -8,7 +9,6 @@ const PANEL_TABS: Panel1Tab[] = ['Test Suite', 'Category', 'Graph', 'Timeline', 
 // Chưa có nội dung riêng ở Increment 2 (sẽ làm ở sub-phase sau, hoặc mãi mãi ngoài scope
 // như Comments, Phase 2 theo FSD mục 5.8) — hiện placeholder trung thực thay vì trống trơn.
 const NOT_YET_BUILT: Partial<Record<Panel1Tab, string>> = {
-  Category: 'Đang xây ở sub-phase 2c.',
   Graph: 'Đang xây ở sub-phase 2e.',
   Timeline: 'Đang xây ở sub-phase 2e (theo TestType, khác Timeline của từng Case).',
   Requirement: 'Đang xây ở sub-phase 2d.',
@@ -38,6 +38,7 @@ export function Panel1() {
       </div>
 
       {activeTab === 'Test Suite' && <TestSuiteTab />}
+      {activeTab === 'Category' && <CategoryTab />}
       {activeTab === 'Environment' && <EnvironmentTab />}
       {NOT_YET_BUILT[activeTab] && (
         <div className="p-4 text-[13px] text-[#84817A]">{NOT_YET_BUILT[activeTab]}</div>

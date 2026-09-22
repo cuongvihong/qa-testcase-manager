@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { api } from '../api/client'
-import type { CaseDetail, Environment, Product, TestCase, TestSuite, TestType } from '../api/types'
+import type { CaseDetail, Category, Environment, Product, TestCase, TestSuite, TestType } from '../api/types'
 
 interface TestExplorerState {
   products: Product[]
@@ -8,10 +8,12 @@ interface TestExplorerState {
   suites: TestSuite[]
   cases: TestCase[]
   environments: Environment[]
+  categories: Category[]
   selectedProductId: number | null
   selectedTestTypeId: number | null
   selectedSuiteId: number | null
   selectedCaseId: number | null
+  selectedCategoryModule: string | null
   caseDetail: CaseDetail | null
 
   loadInitial: () => Promise<void>
@@ -21,6 +23,8 @@ interface TestExplorerState {
   retryCase: (caseId: number) => Promise<void>
   loadEnvironments: () => Promise<void>
   createEnvironment: (name: string, deviceInfo: string | null) => Promise<void>
+  loadCategories: () => Promise<void>
+  selectCategory: (module: string | null) => void
 }
 
 const initialState = {
@@ -29,10 +33,12 @@ const initialState = {
   suites: [],
   cases: [],
   environments: [],
+  categories: [],
   selectedProductId: null,
   selectedTestTypeId: null,
   selectedSuiteId: null,
   selectedCaseId: null,
+  selectedCategoryModule: null,
   caseDetail: null,
 } satisfies Partial<TestExplorerState>
 
@@ -55,7 +61,15 @@ export const useTestExplorer = create<TestExplorerState>((set, get) => ({
 
   async selectTestType(testTypeId) {
     const { selectedProductId } = get()
-    set({ selectedTestTypeId: testTypeId, selectedSuiteId: null, selectedCaseId: null, caseDetail: null, cases: [] })
+    set({
+      selectedTestTypeId: testTypeId,
+      selectedSuiteId: null,
+      selectedCaseId: null,
+      caseDetail: null,
+      cases: [],
+      categories: [],
+      selectedCategoryModule: null,
+    })
     if (selectedProductId === null) return
     const suites = await api.listSuites(selectedProductId, testTypeId)
     set({ suites })
@@ -92,5 +106,16 @@ export const useTestExplorer = create<TestExplorerState>((set, get) => ({
     await api.createEnvironment(selectedProductId, name, deviceInfo)
     const environments = await api.listEnvironments(selectedProductId)
     set({ environments })
+  },
+
+  async loadCategories() {
+    const { selectedProductId, selectedTestTypeId } = get()
+    if (selectedProductId === null || selectedTestTypeId === null) return
+    const categories = await api.listCategories(selectedProductId, selectedTestTypeId)
+    set({ categories })
+  },
+
+  selectCategory(module) {
+    set({ selectedCategoryModule: module })
   },
 }))

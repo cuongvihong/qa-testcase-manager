@@ -66,3 +66,10 @@ export interface Environment {
   name: string
   device_info: string | null
 }
+
+export interface Category {
+  module: string
+  suiteIds: number[]
+  caseCount: number
+  passRate: number
+}

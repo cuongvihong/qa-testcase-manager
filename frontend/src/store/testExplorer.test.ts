@@ -10,6 +10,7 @@ const mockApi = {
   retryCase: vi.fn(),
   listEnvironments: vi.fn(),
   createEnvironment: vi.fn(),
+  listCategories: vi.fn(),
 }
 
 vi.mock('../api/client', () => ({ api: mockApi }))
@@ -167,5 +168,27 @@ describe('environments', () => {
     expect(mockApi.createEnvironment).toHaveBeenCalledWith(1, 'Staging', null)
     expect(mockApi.listEnvironments).toHaveBeenCalledWith(1)
     expect(useTestExplorer.getState().environments).toEqual([env])
+  })
+})
+
+describe('categories', () => {
+  const category = { module: 'Login', suiteIds: [10], caseCount: 3, passRate: 0.5 }
+
+  it('loadCategories fetches for the currently selected product+testType', async () => {
+    mockApi.listCategories.mockResolvedValue([category])
+    useTestExplorer.setState({ selectedProductId: 1, selectedTestTypeId: 3 })
+
+    await useTestExplorer.getState().loadCategories()
+
+    expect(mockApi.listCategories).toHaveBeenCalledWith(1, 3)
+    expect(useTestExplorer.getState().categories).toEqual([category])
+  })
+
+  it('selectCategory sets the active module filter and clears it again on null', () => {
+    useTestExplorer.getState().selectCategory('Login')
+    expect(useTestExplorer.getState().selectedCategoryModule).toBe('Login')
+
+    useTestExplorer.getState().selectCategory(null)
+    expect(useTestExplorer.getState().selectedCategoryModule).toBeNull()
   })
 })
