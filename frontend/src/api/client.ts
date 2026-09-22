@@ -4,6 +4,8 @@ import type {
   Environment,
   GraphData,
   Product,
+  ReportExport,
+  ReportScope,
   Requirement,
   TestCase,
   TestRun,
@@ -57,4 +59,11 @@ export const api = {
     request<GraphData>(`/products/${productId}/test-types/${testTypeId}/graph-data`),
   getTypeTimeline: (productId: number, testTypeId: number) =>
     request<TypeTimelineRow[]>(`/products/${productId}/test-types/${testTypeId}/timeline`),
+  listReports: (productId: number) => request<ReportExport[]>(`/products/${productId}/reports`),
+  exportReport: (productId: number, scope: ReportScope, suiteId: number | null) =>
+    request<ReportExport>('/reports/export', {
+      method: 'POST',
+      body: JSON.stringify({ product_id: productId, scope, suite_id: suiteId }),
+    }),
+  downloadReportUrl: (reportId: number) => `/api/reports/${reportId}/download`,
 }

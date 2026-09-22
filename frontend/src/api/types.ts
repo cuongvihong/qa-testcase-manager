@@ -108,3 +108,15 @@ export interface TypeTimelineRow {
   buildVersion: string
   executedAt: string
 }
+
+export type ReportScope = 'Product' | 'Suite'
+
+export interface ReportExport {
+  id: number
+  product_id: number
+  scope: string
+  format: 'PDF' | 'Excel' | 'CSV'
+  exported_by: number | null
+  exported_at: string
+  file_path: string | null
+}

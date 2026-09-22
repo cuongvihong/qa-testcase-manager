@@ -17,6 +17,8 @@ const mockApi = {
   getTraceabilityMatrix: vi.fn(),
   getGraphData: vi.fn(),
   getTypeTimeline: vi.fn(),
+  listReports: vi.fn(),
+  exportReport: vi.fn(),
 }
 
 vi.mock('../api/client', () => ({ api: mockApi }))
@@ -273,5 +275,30 @@ describe('loadTypeTimeline', () => {
 
     expect(mockApi.getTypeTimeline).toHaveBeenCalledWith(1, 3)
     expect(useTestExplorer.getState().typeTimeline).toEqual(rows)
+  })
+})
+
+describe('reports', () => {
+  const report = { id: 1, product_id: 1, scope: 'Product', format: 'CSV', exported_by: null, exported_at: '', file_path: 'x.csv' }
+
+  it('loadReports fetches the report history for the selected product', async () => {
+    mockApi.listReports.mockResolvedValue([report])
+    useTestExplorer.setState({ selectedProductId: 1 })
+
+    await useTestExplorer.getState().loadReports()
+
+    expect(mockApi.listReports).toHaveBeenCalledWith(1)
+    expect(useTestExplorer.getState().reports).toEqual([report])
+  })
+
+  it('exportReport posts then refreshes report history', async () => {
+    mockApi.exportReport.mockResolvedValue(report)
+    mockApi.listReports.mockResolvedValue([report])
+    useTestExplorer.setState({ selectedProductId: 1 })
+
+    await useTestExplorer.getState().exportReport('Product', null)
+
+    expect(mockApi.exportReport).toHaveBeenCalledWith(1, 'Product', null)
+    expect(useTestExplorer.getState().reports).toEqual([report])
   })
 })

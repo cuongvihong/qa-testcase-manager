@@ -385,3 +385,40 @@ test.describe('Timeline tab (per TestType)', () => {
     expect(await rows.count()).toBeGreaterThan(1)
   })
 })
+
+test.describe('Report tab', () => {
+  test('exporting a Product-scope CSV appears in history and downloads real content', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'UI Test', exact: true }).click()
+    await page.getByRole('button', { name: 'Report', exact: true }).click()
+
+    const historyRowsBefore = page.locator('div.rounded-\\[10px\\]', { hasText: 'Product · CSV' })
+    const countBefore = await historyRowsBefore.count()
+
+    await page.getByRole('button', { name: 'Xuất CSV', exact: true }).click()
+    await expect(historyRowsBefore).toHaveCount(countBefore + 1)
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      historyRowsBefore.first().getByRole('link', { name: 'Tải', exact: true }).click(),
+    ])
+    const path = await download.path()
+    expect(path).not.toBeNull()
+    const fs = await import('node:fs/promises')
+    const content = await fs.readFile(path!, 'utf-8')
+    expect(content).toContain('Suite,Case,Status')
+  })
+
+  test('Suite-scope export is disabled until a suite is chosen', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'UI Test', exact: true }).click()
+    await page.getByRole('button', { name: 'Report', exact: true }).click()
+
+    await page.getByRole('combobox').selectOption('Suite')
+    const exportButton = page.getByRole('button', { name: 'Xuất CSV', exact: true })
+    await expect(exportButton).toBeDisabled()
+
+    await page.getByRole('combobox').nth(1).selectOption({ index: 1 })
+    await expect(exportButton).toBeEnabled()
+  })
+})

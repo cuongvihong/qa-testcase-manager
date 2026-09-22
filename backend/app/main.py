@@ -6,7 +6,18 @@ from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session
 
 from app.db import engine, init_db
-from app.routes import automation, cases, categories, environments, graph, products, requirements, suites, test_types
+from app.routes import (
+    automation,
+    cases,
+    categories,
+    environments,
+    graph,
+    products,
+    reports,
+    requirements,
+    suites,
+    test_types,
+)
 from app.seed import seed
 
 
@@ -29,6 +40,7 @@ app.include_router(environments.router)
 app.include_router(categories.router)
 app.include_router(requirements.router)
 app.include_router(graph.router)
+app.include_router(reports.router)
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 

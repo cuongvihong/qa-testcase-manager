@@ -6,6 +6,8 @@ import type {
   Environment,
   GraphData,
   Product,
+  ReportExport,
+  ReportScope,
   Requirement,
   TestCase,
   TestSuite,
@@ -25,6 +27,7 @@ interface TestExplorerState {
   traceabilityMatrix: TraceabilityRow[]
   graphData: GraphData | null
   typeTimeline: TypeTimelineRow[]
+  reports: ReportExport[]
   selectedProductId: number | null
   selectedTestTypeId: number | null
   selectedSuiteId: number | null
@@ -46,6 +49,8 @@ interface TestExplorerState {
   linkCaseToRequirement: (requirementId: number, testCaseId: number) => Promise<void>
   loadGraphData: () => Promise<void>
   loadTypeTimeline: () => Promise<void>
+  loadReports: () => Promise<void>
+  exportReport: (scope: ReportScope, suiteId: number | null) => Promise<void>
 }
 
 const initialState = {
@@ -59,6 +64,7 @@ const initialState = {
   traceabilityMatrix: [],
   graphData: null,
   typeTimeline: [],
+  reports: [],
   selectedProductId: null,
   selectedTestTypeId: null,
   selectedSuiteId: null,
@@ -185,5 +191,20 @@ export const useTestExplorer = create<TestExplorerState>((set, get) => ({
     if (selectedProductId === null || selectedTestTypeId === null) return
     const typeTimeline = await api.getTypeTimeline(selectedProductId, selectedTestTypeId)
     set({ typeTimeline })
+  },
+
+  async loadReports() {
+    const { selectedProductId } = get()
+    if (selectedProductId === null) return
+    const reports = await api.listReports(selectedProductId)
+    set({ reports })
+  },
+
+  async exportReport(scope, suiteId) {
+    const { selectedProductId } = get()
+    if (selectedProductId === null) return
+    await api.exportReport(selectedProductId, scope, suiteId)
+    const reports = await api.listReports(selectedProductId)
+    set({ reports })
   },
 }))
