@@ -2,6 +2,7 @@ import type {
   CaseDetail,
   Category,
   Environment,
+  GraphData,
   Product,
   Requirement,
   TestCase,
@@ -9,6 +10,7 @@ import type {
   TestSuite,
   TestType,
   TraceabilityRow,
+  TypeTimelineRow,
 } from './types'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -51,4 +53,8 @@ export const api = {
     }),
   getTraceabilityMatrix: (productId: number) =>
     request<TraceabilityRow[]>(`/products/${productId}/traceability-matrix`),
+  getGraphData: (productId: number, testTypeId: number) =>
+    request<GraphData>(`/products/${productId}/test-types/${testTypeId}/graph-data`),
+  getTypeTimeline: (productId: number, testTypeId: number) =>
+    request<TypeTimelineRow[]>(`/products/${productId}/test-types/${testTypeId}/timeline`),
 }

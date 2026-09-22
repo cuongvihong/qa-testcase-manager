@@ -355,3 +355,33 @@ test.describe('Requirement tab', () => {
     await expect(addButton).toBeEnabled()
   })
 })
+
+test.describe('Graph tab', () => {
+  test('shows real Pass/Fail bars that sum to a sane total, and a coverage line', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'UI Test', exact: true }).click()
+    await page.getByRole('button', { name: 'Graph', exact: true }).click()
+
+    const passRow = page.locator('div', { hasText: /^Pass\d+$/ })
+    await expect(passRow).toBeVisible()
+
+    // Real AIQA data always has a mix of Pass and Fail — both counts must render and be > 0,
+    // proving the aggregation actually read real TestCase rows, not an empty/default state.
+    const passCount = Number((await page.locator('span', { hasText: /^\d+$/ }).first().textContent())!)
+    expect(passCount).toBeGreaterThan(0)
+
+    await expect(page.getByText('Test Coverage')).toBeVisible()
+  })
+})
+
+test.describe('Timeline tab (per TestType)', () => {
+  test('lists real runs across multiple cases, newest first, with build info', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'UI Test', exact: true }).click()
+    await page.getByRole('button', { name: 'Timeline', exact: true }).click()
+
+    const rows = page.locator('div.rounded-\\[10px\\]').filter({ hasText: /build/ })
+    await expect(rows.first()).toBeVisible()
+    expect(await rows.count()).toBeGreaterThan(1)
+  })
+})

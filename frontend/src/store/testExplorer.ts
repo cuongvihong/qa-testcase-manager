@@ -4,12 +4,14 @@ import type {
   CaseDetail,
   Category,
   Environment,
+  GraphData,
   Product,
   Requirement,
   TestCase,
   TestSuite,
   TestType,
   TraceabilityRow,
+  TypeTimelineRow,
 } from '../api/types'
 
 interface TestExplorerState {
@@ -21,6 +23,8 @@ interface TestExplorerState {
   categories: Category[]
   requirements: Requirement[]
   traceabilityMatrix: TraceabilityRow[]
+  graphData: GraphData | null
+  typeTimeline: TypeTimelineRow[]
   selectedProductId: number | null
   selectedTestTypeId: number | null
   selectedSuiteId: number | null
@@ -40,6 +44,8 @@ interface TestExplorerState {
   loadRequirements: () => Promise<void>
   createRequirement: (title: string, description: string) => Promise<void>
   linkCaseToRequirement: (requirementId: number, testCaseId: number) => Promise<void>
+  loadGraphData: () => Promise<void>
+  loadTypeTimeline: () => Promise<void>
 }
 
 const initialState = {
@@ -51,6 +57,8 @@ const initialState = {
   categories: [],
   requirements: [],
   traceabilityMatrix: [],
+  graphData: null,
+  typeTimeline: [],
   selectedProductId: null,
   selectedTestTypeId: null,
   selectedSuiteId: null,
@@ -163,5 +171,19 @@ export const useTestExplorer = create<TestExplorerState>((set, get) => ({
     if (selectedProductId === null) return
     const traceabilityMatrix = await api.getTraceabilityMatrix(selectedProductId)
     set({ traceabilityMatrix })
+  },
+
+  async loadGraphData() {
+    const { selectedProductId, selectedTestTypeId } = get()
+    if (selectedProductId === null || selectedTestTypeId === null) return
+    const graphData = await api.getGraphData(selectedProductId, selectedTestTypeId)
+    set({ graphData })
+  },
+
+  async loadTypeTimeline() {
+    const { selectedProductId, selectedTestTypeId } = get()
+    if (selectedProductId === null || selectedTestTypeId === null) return
+    const typeTimeline = await api.getTypeTimeline(selectedProductId, selectedTestTypeId)
+    set({ typeTimeline })
   },
 }))

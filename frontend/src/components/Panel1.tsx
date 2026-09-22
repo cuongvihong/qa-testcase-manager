@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { CategoryTab } from './CategoryTab'
 import { EnvironmentTab } from './EnvironmentTab'
+import { GraphTab } from './GraphTab'
 import { RequirementTab } from './RequirementTab'
 import { TestSuiteTab } from './TestSuiteTab'
+import { TypeTimelineTab } from './TypeTimelineTab'
 
 type Panel1Tab = 'Test Suite' | 'Category' | 'Graph' | 'Timeline' | 'Requirement' | 'Report' | 'Environment' | 'Comments'
 const PANEL_TABS: Panel1Tab[] = ['Test Suite', 'Category', 'Graph', 'Timeline', 'Requirement', 'Report', 'Environment', 'Comments']
@@ -10,8 +12,6 @@ const PANEL_TABS: Panel1Tab[] = ['Test Suite', 'Category', 'Graph', 'Timeline', 
 // Chưa có nội dung riêng ở Increment 2 (sẽ làm ở sub-phase sau, hoặc mãi mãi ngoài scope
 // như Comments, Phase 2 theo FSD mục 5.8) — hiện placeholder trung thực thay vì trống trơn.
 const NOT_YET_BUILT: Partial<Record<Panel1Tab, string>> = {
-  Graph: 'Đang xây ở sub-phase 2e.',
-  Timeline: 'Đang xây ở sub-phase 2e (theo TestType, khác Timeline của từng Case).',
   Report: 'Đang xây ở sub-phase 2f.',
   Comments: 'Phase 2 theo FSD mục 5.8, tạm chưa áp dụng ở giai đoạn đơn người dùng.',
 }
@@ -39,6 +39,8 @@ export function Panel1() {
 
       {activeTab === 'Test Suite' && <TestSuiteTab />}
       {activeTab === 'Category' && <CategoryTab />}
+      {activeTab === 'Graph' && <GraphTab />}
+      {activeTab === 'Timeline' && <TypeTimelineTab />}
       {activeTab === 'Environment' && <EnvironmentTab />}
       {activeTab === 'Requirement' && <RequirementTab />}
       {NOT_YET_BUILT[activeTab] && (

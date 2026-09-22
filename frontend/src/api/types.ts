@@ -88,3 +88,23 @@ export interface TraceabilityRow {
   caseIds: number[]
   covered: boolean
 }
+
+export interface TrendPoint {
+  date: string
+  passRate: number
+}
+
+export interface GraphData {
+  statusCounts: Record<CaseStatus, number>
+  trend: TrendPoint[]
+  coveragePercent: number | null
+}
+
+export interface TypeTimelineRow {
+  runId: number
+  testCaseId: number
+  testCaseTitle: string
+  result: 'Pass' | 'Fail' | 'Blocked' | 'Skipped'
+  buildVersion: string
+  executedAt: string
+}

@@ -15,6 +15,8 @@ const mockApi = {
   createRequirement: vi.fn(),
   linkCase: vi.fn(),
   getTraceabilityMatrix: vi.fn(),
+  getGraphData: vi.fn(),
+  getTypeTimeline: vi.fn(),
 }
 
 vi.mock('../api/client', () => ({ api: mockApi }))
@@ -237,5 +239,39 @@ describe('requirements', () => {
 
     expect(mockApi.linkCase).toHaveBeenCalledWith(1, 42)
     expect(useTestExplorer.getState().traceabilityMatrix).toEqual(coveredMatrix)
+  })
+})
+
+describe('loadGraphData', () => {
+  it('fetches graph data for the currently selected product+testType', async () => {
+    const data = { statusCounts: { Pass: 1 }, trend: [], coveragePercent: null }
+    mockApi.getGraphData.mockResolvedValue(data)
+    useTestExplorer.setState({ selectedProductId: 1, selectedTestTypeId: 3 })
+
+    await useTestExplorer.getState().loadGraphData()
+
+    expect(mockApi.getGraphData).toHaveBeenCalledWith(1, 3)
+    expect(useTestExplorer.getState().graphData).toEqual(data)
+  })
+
+  it('is a no-op when no product/testType selected', async () => {
+    useTestExplorer.setState({ selectedProductId: null, selectedTestTypeId: null })
+
+    await useTestExplorer.getState().loadGraphData()
+
+    expect(mockApi.getGraphData).not.toHaveBeenCalled()
+  })
+})
+
+describe('loadTypeTimeline', () => {
+  it('fetches the TestType-scoped run timeline for the selected product+testType', async () => {
+    const rows = [{ runId: 1, testCaseId: 5, testCaseTitle: 'C', result: 'Pass', buildVersion: 'v1', executedAt: '' }]
+    mockApi.getTypeTimeline.mockResolvedValue(rows)
+    useTestExplorer.setState({ selectedProductId: 1, selectedTestTypeId: 3 })
+
+    await useTestExplorer.getState().loadTypeTimeline()
+
+    expect(mockApi.getTypeTimeline).toHaveBeenCalledWith(1, 3)
+    expect(useTestExplorer.getState().typeTimeline).toEqual(rows)
   })
 })
