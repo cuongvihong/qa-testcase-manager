@@ -165,6 +165,90 @@ def test_updating_existing_case_via_ingest_does_not_touch_priority_or_execution_
     assert manual_case.script_path is None
 
 
+def test_updating_existing_auto_created_case_fills_in_missing_script_path():
+    session = make_session()
+    product = make_product(session)
+
+    test_type = TestType(name="UI Test")
+    session.add(test_type)
+    session.commit()
+    session.refresh(test_type)
+
+    suite = TestSuite(product_id=product.id, test_type_id=test_type.id, name="Personal Information")
+    session.add(suite)
+    session.commit()
+    session.refresh(suite)
+
+    auto_case = TestCase(
+        suite_id=suite.id,
+        title="Save without gender",
+        is_auto_created=True,
+        execution_type="Automated",
+        script_path=None,
+    )
+    session.add(auto_case)
+    session.commit()
+    session.refresh(auto_case)
+
+    payload = AutomationResultsPayload(
+        suiteName="Personal Information",
+        testTypeName="UI Test",
+        cases=[
+            AutomationCaseResult(
+                title="Save without gender",
+                result="Pass",
+                scriptPath="tests/test_personal_information.py",
+            )
+        ],
+    )
+    ingest_results(session, product_id=product.id, payload=payload)
+
+    session.refresh(auto_case)
+    assert auto_case.script_path == "tests/test_personal_information.py"
+
+
+def test_updating_existing_auto_created_case_does_not_overwrite_a_set_script_path():
+    session = make_session()
+    product = make_product(session)
+
+    test_type = TestType(name="UI Test")
+    session.add(test_type)
+    session.commit()
+    session.refresh(test_type)
+
+    suite = TestSuite(product_id=product.id, test_type_id=test_type.id, name="Personal Information")
+    session.add(suite)
+    session.commit()
+    session.refresh(suite)
+
+    auto_case = TestCase(
+        suite_id=suite.id,
+        title="Save without gender",
+        is_auto_created=True,
+        execution_type="Automated",
+        script_path="tests/original_path.py",
+    )
+    session.add(auto_case)
+    session.commit()
+    session.refresh(auto_case)
+
+    payload = AutomationResultsPayload(
+        suiteName="Personal Information",
+        testTypeName="UI Test",
+        cases=[
+            AutomationCaseResult(
+                title="Save without gender",
+                result="Pass",
+                scriptPath="tests/moved_path.py",
+            )
+        ],
+    )
+    ingest_results(session, product_id=product.id, payload=payload)
+
+    session.refresh(auto_case)
+    assert auto_case.script_path == "tests/original_path.py"
+
+
 def test_manually_created_case_is_not_flagged_auto_created():
     session = make_session()
     product = make_product(session)

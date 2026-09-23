@@ -41,6 +41,8 @@ def ingest_results(session: Session, product_id: int, payload: AutomationResults
         if case is not None:
             # 5. Nếu tìm thấy, cập nhật currentStatus, tạo một TestRun mới
             case.current_status = CaseStatus(case_result.result.value)
+            if case.is_auto_created and case.script_path is None and case_result.scriptPath is not None:
+                case.script_path = case_result.scriptPath
             session.add(case)
             cases_updated += 1
         else:
