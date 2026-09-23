@@ -422,3 +422,63 @@ test.describe('Report tab', () => {
     await expect(exportButton).toBeEnabled()
   })
 })
+
+test.describe('Case priority/execution-type (Increment 3)', () => {
+  test('Status tab shows priority and execution-type badges on a real seeded case', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Unit Test', exact: true }).click()
+    await page.getByRole('button', { name: 'Auth module - unit tests' }).click()
+    await page.getByRole('button', { name: 'Login voi password sai', exact: true }).click()
+
+    const statusPanel = page.locator('div.flex-\\[3_1_0\\%\\]').last()
+    await expect(statusPanel.getByText('Fail', { exact: true })).toBeVisible()
+    await expect(statusPanel.getByText('Medium', { exact: true })).toBeVisible()
+    await expect(statusPanel.getByText('Manual', { exact: true })).toBeVisible()
+  })
+})
+
+test.describe('Suite rollup (Increment 3)', () => {
+  test('expanding a suite shows a case-count / pass-rate summary line', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Unit Test', exact: true }).click()
+    await page.getByRole('button', { name: 'Auth module - unit tests' }).click()
+
+    await expect(page.getByText('2 case · 50% pass', { exact: true })).toBeVisible()
+  })
+})
+
+test.describe('Category tab search + filter (Increment 3)', () => {
+  test('searching by keyword returns matching cases across suites and navigates to the case on click', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Unit Test', exact: true }).click()
+    await page.getByRole('button', { name: 'Category', exact: true }).click()
+
+    // Danh sách module hiện trước, chưa filter gì.
+    await expect(page.getByRole('button', { name: 'Auth 2 case · 50% pass', exact: true })).toBeVisible()
+
+    await page.getByPlaceholder('Tìm theo tên case...').fill('password')
+    const result = page.getByRole('button', { name: 'Login voi password sai Auth module - unit tests Medium' })
+    await expect(result).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Login voi email hop le' })).not.toBeVisible()
+
+    await result.click()
+    const statusPanel = page.locator('div.flex-\\[3_1_0\\%\\]').last()
+    await expect(statusPanel.getByText('Login voi password sai', { exact: true })).toBeVisible()
+  })
+
+  test('filtering by priority narrows results independently of the keyword box', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Unit Test', exact: true }).click()
+    await page.getByRole('button', { name: 'Category', exact: true }).click()
+
+    await page.getByRole('combobox').selectOption('Medium')
+    await expect(page.getByRole('button', { name: 'Login voi email hop le' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Login voi password sai' })).toBeVisible()
+
+    await page.getByRole('combobox').selectOption('')
+    await page.getByPlaceholder('Tìm theo tên case...').fill('khong ton tai case nao ten nhu vay')
+    await expect(page.getByText('Không tìm thấy case nào khớp.', { exact: true })).toBeVisible()
+  })
+})

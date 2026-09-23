@@ -9,6 +9,30 @@ def test_create_and_list_cases(client, suite):
     assert len(resp.json()) == 1
 
 
+def test_create_case_inherits_priority_from_suite_when_not_given(client, session, product, test_type):
+    from app.models import TestSuite
+
+    high_suite = TestSuite(product_id=product.id, test_type_id=test_type.id, name="Payment", priority="High")
+    session.add(high_suite)
+    session.commit()
+    session.refresh(high_suite)
+
+    resp = client.post("/api/cases", json={"suite_id": high_suite.id, "title": "Thanh toan"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["priority"] == "High"
+    assert body["execution_type"] == "Manual"
+    assert body["script_path"] is None
+
+
+def test_create_case_explicit_priority_overrides_suite_priority(client, suite):
+    resp = client.post(
+        "/api/cases", json={"suite_id": suite.id, "title": "Case uu tien thap", "priority": "Low"}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["priority"] == "Low"
+
+
 def test_get_case_includes_runs(client, session, suite):
     from app.models import TestCase, TestRun
 
@@ -48,6 +72,58 @@ def test_update_case(client, session, suite):
     assert resp.status_code == 200
     assert resp.json()["title"] == "Ten moi"
     assert resp.json()["current_status"] == "Pass"
+
+
+def test_update_case_patches_priority_execution_type_and_script_path(client, session, suite):
+    from app.models import TestCase
+
+    case = TestCase(suite_id=suite.id, title="Case automation")
+    session.add(case)
+    session.commit()
+    session.refresh(case)
+
+    resp = client.put(
+        f"/api/cases/{case.id}",
+        json={
+            "suite_id": suite.id,
+            "title": "Case automation",
+            "description": "",
+            "current_status": "Pass",
+            "priority": "High",
+            "execution_type": "Automated",
+            "script_path": "tests/test_login.py::test_valid_email",
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["priority"] == "High"
+    assert body["execution_type"] == "Automated"
+    assert body["script_path"] == "tests/test_login.py::test_valid_email"
+
+
+def test_get_case_includes_environment_name_on_runs(client, session, suite):
+    from app.models import Environment, TestCase, TestRun
+
+    env = Environment(product_id=suite.product_id, name="Staging")
+    session.add(env)
+    session.commit()
+    session.refresh(env)
+
+    case = TestCase(suite_id=suite.id, title="Case voi environment")
+    session.add(case)
+    session.commit()
+    session.refresh(case)
+
+    session.add(TestRun(test_case_id=case.id, result="Pass", environment_id=env.id))
+    session.add(TestRun(test_case_id=case.id, result="Fail"))
+    session.commit()
+
+    resp = client.get(f"/api/cases/{case.id}")
+    runs = resp.json()["runs"]
+    with_env = next(r for r in runs if r["environment_id"] == env.id)
+    without_env = next(r for r in runs if r["environment_id"] is None)
+    assert with_env["environment_name"] == "Staging"
+    assert without_env["environment_name"] is None
 
 
 def test_update_case_not_found(client, suite):

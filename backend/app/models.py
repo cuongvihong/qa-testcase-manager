@@ -47,6 +47,11 @@ class RunResult(str, Enum):
     SKIPPED = "Skipped"
 
 
+class CaseExecutionType(str, Enum):
+    MANUAL = "Manual"
+    AUTOMATED = "Automated"
+
+
 class DeleteRequestStatus(str, Enum):
     PENDING = "Pending"
     APPROVED = "Approved"
@@ -133,6 +138,9 @@ class TestCase(SQLModel, table=True):
     description: str = ""
     current_status: CaseStatus = Field(default=CaseStatus.NOT_RUN)
     is_auto_created: bool = Field(default=False)
+    priority: SuitePriority = Field(default=SuitePriority.MEDIUM)
+    execution_type: CaseExecutionType = Field(default=CaseExecutionType.MANUAL)
+    script_path: Optional[str] = None
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
 

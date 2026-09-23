@@ -106,6 +106,65 @@ def test_updates_existing_case_and_appends_testrun_instead_of_duplicating():
     assert summary.runsCreated == 1
 
 
+def test_new_case_via_ingest_gets_automated_execution_type_and_inherits_suite_priority():
+    session = make_session()
+    product = make_product(session)
+
+    test_type = TestType(name="UI Test")
+    session.add(test_type)
+    session.commit()
+    session.refresh(test_type)
+
+    suite = TestSuite(product_id=product.id, test_type_id=test_type.id, name="Payment", priority="High")
+    session.add(suite)
+    session.commit()
+    session.refresh(suite)
+
+    payload = AutomationResultsPayload(
+        suiteName="Payment",
+        testTypeName="UI Test",
+        cases=[AutomationCaseResult(title="Test the het han", result="Fail", scriptPath="tests/test_card.py::test_expired")],
+    )
+    ingest_results(session, product_id=product.id, payload=payload)
+
+    case = session.exec(select(TestCase).where(TestCase.title == "Test the het han")).one()
+    assert case.execution_type == "Automated"
+    assert case.priority == "High", "case mới tạo qua ingest phải kế thừa priority của suite"
+    assert case.script_path == "tests/test_card.py::test_expired"
+
+
+def test_updating_existing_case_via_ingest_does_not_touch_priority_or_execution_type():
+    session = make_session()
+    product = make_product(session)
+
+    test_type = TestType(name="UI Test")
+    session.add(test_type)
+    session.commit()
+    session.refresh(test_type)
+
+    suite = TestSuite(product_id=product.id, test_type_id=test_type.id, name="Payment", priority="High")
+    session.add(suite)
+    session.commit()
+    session.refresh(suite)
+
+    manual_case = TestCase(suite_id=suite.id, title="Case da co", priority="Low", execution_type="Manual")
+    session.add(manual_case)
+    session.commit()
+    session.refresh(manual_case)
+
+    payload = AutomationResultsPayload(
+        suiteName="Payment",
+        testTypeName="UI Test",
+        cases=[AutomationCaseResult(title="Case da co", result="Pass", scriptPath="should/not/apply")],
+    )
+    ingest_results(session, product_id=product.id, payload=payload)
+
+    session.refresh(manual_case)
+    assert manual_case.priority == "Low", "ingest cập nhật case đã có sẵn không được ghi đè priority thủ công"
+    assert manual_case.execution_type == "Manual"
+    assert manual_case.script_path is None
+
+
 def test_manually_created_case_is_not_flagged_auto_created():
     session = make_session()
     product = make_product(session)

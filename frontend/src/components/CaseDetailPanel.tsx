@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { TestRun } from '../api/types'
 import { useTestExplorer } from '../store/testExplorer'
-import { STATUS_BADGE, STATUS_DOT } from './statusColors'
+import { PRIORITY_BADGE, STATUS_BADGE, STATUS_DOT } from './statusColors'
 
 type DetailTab = 'Status' | 'Timeline' | 'Retry'
 const DETAIL_TABS: DetailTab[] = ['Status', 'Timeline', 'Retry']
@@ -71,10 +71,6 @@ function StatusTabContent({
   testCase: NonNullable<ReturnType<typeof useTestExplorer.getState>['caseDetail']>['case']
   latestRun: TestRun | undefined
 }) {
-  if (!latestRun) {
-    return <div className="text-[13px] text-[#84817A]">Case này chưa từng chạy lần nào.</div>
-  }
-
   return (
     <>
       <div className="flex flex-wrap items-center gap-2.5">
@@ -84,10 +80,19 @@ function StatusTabContent({
         >
           {testCase.current_status}
         </span>
-        {latestRun.duration_ms !== null && (
+        <span
+          className="rounded-full px-2.5 py-1 text-[11px] font-bold"
+          style={{ background: PRIORITY_BADGE[testCase.priority].bg, color: PRIORITY_BADGE[testCase.priority].fg }}
+        >
+          {testCase.priority}
+        </span>
+        <span className="rounded-full border border-[#E4E1DA] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#495057]">
+          {testCase.execution_type}
+        </span>
+        {latestRun?.duration_ms !== null && latestRun?.duration_ms !== undefined && (
           <span className="text-[11.5px] text-[#84817A]">Tổng thời gian {(latestRun.duration_ms / 1000).toFixed(1)}s</span>
         )}
-        {latestRun.build_version && (
+        {latestRun?.build_version && (
           <>
             <span className="text-[11.5px] text-[#84817A]">·</span>
             <span className="font-mono text-[11.5px] text-[#84817A]">build {latestRun.build_version}</span>
@@ -95,13 +100,36 @@ function StatusTabContent({
         )}
       </div>
 
+      {testCase.script_path && (
+        <div className="rounded-md border border-[#E4E1DA] bg-white px-2.5 py-2 font-mono text-[11.5px] text-[#3A382F]">
+          {testCase.script_path}
+        </div>
+      )}
+
       {testCase.is_auto_created && (
         <div className="flex items-center gap-2 rounded-lg border border-[#E4E1DA] bg-white px-2.5 py-2">
           <span className="text-[10.5px] text-[#84817A]">Tự động tạo từ automation (Playwright/pytest)</span>
         </div>
       )}
 
-      {latestRun.error_note && (
+      {!latestRun && <div className="text-[13px] text-[#84817A]">Case này chưa từng chạy lần nào.</div>}
+
+      {latestRun?.environment_name && (
+        <div className="text-[11.5px] text-[#84817A]">Environment: {latestRun.environment_name}</div>
+      )}
+
+      {latestRun?.bug_ticket_link && (
+        <a
+          href={latestRun.bug_ticket_link}
+          target="_blank"
+          rel="noreferrer"
+          className="text-[11.5px] font-semibold text-[#3B5BDB] underline"
+        >
+          Bug ticket: {latestRun.bug_ticket_link}
+        </a>
+      )}
+
+      {latestRun?.error_note && (
         <div className="rounded-md border border-[#FFC9C9] bg-white p-2.5 font-mono text-[11.5px] leading-relaxed text-[#C92A2A]">
           {latestRun.error_note}
         </div>

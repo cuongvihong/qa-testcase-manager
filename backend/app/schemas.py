@@ -12,6 +12,7 @@ class AutomationCaseResult(BaseModel):
     errorMessage: Optional[str] = None
     buildVersion: str = ""
     environmentName: Optional[str] = None
+    scriptPath: Optional[str] = None
 
 
 class AutomationResultsPayload(BaseModel):

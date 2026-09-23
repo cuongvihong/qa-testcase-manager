@@ -31,6 +31,12 @@ export function SuiteCard({ suite }: { suite: TestSuite }) {
 
       {expanded && (
         <div>
+          {cases.length > 0 && (
+            <div className="border-t border-[#F0EEE9] bg-[#FAFAF8] px-3.5 py-2 text-[11px] text-[#84817A]">
+              {cases.length} case ·{' '}
+              {Math.round((cases.filter((c) => c.current_status === 'Pass').length / cases.length) * 100)}% pass
+            </div>
+          )}
           {cases.length === 0 && (
             <div className="border-t border-[#F0EEE9] px-3.5 py-3 text-[13px] text-[#84817A]">Chưa có Test Case nào.</div>
           )}

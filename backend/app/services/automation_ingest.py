@@ -50,6 +50,9 @@ def ingest_results(session: Session, product_id: int, payload: AutomationResults
                 title=case_result.title,
                 current_status=CaseStatus(case_result.result.value),
                 is_auto_created=True,
+                execution_type="Automated",
+                priority=suite.priority,
+                script_path=case_result.scriptPath,
             )
             session.add(case)
             session.commit()
