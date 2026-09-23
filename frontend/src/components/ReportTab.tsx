@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { ReportScope } from '../api/types'
+import type { ReportFormat, ReportScope } from '../api/types'
 import { useTestExplorer } from '../store/testExplorer'
 
 export function ReportTab() {
@@ -10,6 +10,7 @@ export function ReportTab() {
 
   const [scope, setScope] = useState<ReportScope>('Product')
   const [suiteId, setSuiteId] = useState<number | null>(null)
+  const [format, setFormat] = useState<ReportFormat>('CSV')
   const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
@@ -19,7 +20,7 @@ export function ReportTab() {
   async function handleExport() {
     setExporting(true)
     try {
-      await exportReport(scope, scope === 'Suite' ? suiteId : null)
+      await exportReport(scope, scope === 'Suite' ? suiteId : null, format)
     } finally {
       setExporting(false)
     }
@@ -31,6 +32,7 @@ export function ReportTab() {
         <div className="text-[12px] font-semibold text-[#1B1B18]">Xuất báo cáo</div>
         <div className="flex items-center gap-2">
           <select
+            aria-label="Phạm vi báo cáo"
             value={scope}
             onChange={(e) => setScope(e.target.value as ReportScope)}
             className="rounded-lg border border-[#E4E1DA] bg-white px-2 py-1.5 text-[13px]"
@@ -40,6 +42,7 @@ export function ReportTab() {
           </select>
           {scope === 'Suite' && (
             <select
+              aria-label="Chọn Suite"
               value={suiteId ?? ''}
               onChange={(e) => setSuiteId(e.target.value ? Number(e.target.value) : null)}
               className="rounded-lg border border-[#E4E1DA] bg-white px-2 py-1.5 text-[13px]"
@@ -52,13 +55,23 @@ export function ReportTab() {
               ))}
             </select>
           )}
+          <select
+            aria-label="Định dạng báo cáo"
+            value={format}
+            onChange={(e) => setFormat(e.target.value as ReportFormat)}
+            className="rounded-lg border border-[#E4E1DA] bg-white px-2 py-1.5 text-[13px]"
+          >
+            <option value="CSV">CSV</option>
+            <option value="PDF">PDF</option>
+            <option value="Excel">Excel</option>
+          </select>
         </div>
         <button
           onClick={handleExport}
           disabled={exporting || (scope === 'Suite' && suiteId === null)}
           className="self-start rounded-lg bg-[#3B5BDB] px-3.5 py-1.5 text-[12.5px] font-semibold text-white disabled:opacity-50"
         >
-          {exporting ? 'Đang xuất...' : 'Xuất CSV'}
+          {exporting ? 'Đang xuất...' : `Xuất ${format}`}
         </button>
       </div>
 

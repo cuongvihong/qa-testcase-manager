@@ -11,6 +11,7 @@ const mockApi = {
   listEnvironments: vi.fn(),
   createEnvironment: vi.fn(),
   listCategories: vi.fn(),
+  searchCases: vi.fn(),
   listRequirements: vi.fn(),
   createRequirement: vi.fn(),
   linkCase: vi.fn(),
@@ -47,6 +48,9 @@ const testCase: TestCase = {
   description: '',
   current_status: 'Pass',
   is_auto_created: false,
+  priority: 'Medium',
+  execution_type: 'Manual',
+  script_path: null,
   created_at: '',
   updated_at: '',
 }
@@ -112,6 +116,20 @@ describe('selectSuite', () => {
     expect(state.selectedSuiteId).toBe(10)
     expect(state.cases).toEqual([testCase])
     expect(state.selectedCaseId).toBeNull()
+  })
+
+  it('clicking an already-open suite again collapses it instead of re-fetching', async () => {
+    mockApi.listCases.mockResolvedValue([testCase])
+    useTestExplorer.setState({ selectedSuiteId: 10, cases: [testCase], selectedCaseId: 100, caseDetail: { case: testCase, runs: [] } })
+
+    await useTestExplorer.getState().selectSuite(10)
+
+    expect(mockApi.listCases).not.toHaveBeenCalled()
+    const state = useTestExplorer.getState()
+    expect(state.selectedSuiteId).toBeNull()
+    expect(state.cases).toEqual([])
+    expect(state.selectedCaseId).toBeNull()
+    expect(state.caseDetail).toBeNull()
   })
 })
 
@@ -198,6 +216,30 @@ describe('categories', () => {
 
     useTestExplorer.getState().selectCategory(null)
     expect(useTestExplorer.getState().selectedCategoryModule).toBeNull()
+  })
+})
+
+describe('searchCases', () => {
+  const row = { id: 1, title: 'Login voi email hop le', suite_id: 10, suite_name: 'Auth', module: 'Auth', priority: 'High', current_status: 'Pass' }
+
+  it('fetches filtered cases for the currently selected product+testType and stores the query', async () => {
+    mockApi.searchCases.mockResolvedValue([row])
+    useTestExplorer.setState({ selectedProductId: 1, selectedTestTypeId: 3 })
+
+    await useTestExplorer.getState().searchCases({ q: 'login', priority: 'High', module: null })
+
+    expect(mockApi.searchCases).toHaveBeenCalledWith(1, 3, { q: 'login', priority: 'High' })
+    const state = useTestExplorer.getState()
+    expect(state.caseSearchResults).toEqual([row])
+    expect(state.caseSearchQuery).toEqual({ q: 'login', priority: 'High', module: null })
+  })
+
+  it('is a no-op when no product/testType selected', async () => {
+    useTestExplorer.setState({ selectedProductId: null, selectedTestTypeId: null })
+
+    await useTestExplorer.getState().searchCases({ q: 'x', priority: null, module: null })
+
+    expect(mockApi.searchCases).not.toHaveBeenCalled()
   })
 })
 
@@ -296,9 +338,9 @@ describe('reports', () => {
     mockApi.listReports.mockResolvedValue([report])
     useTestExplorer.setState({ selectedProductId: 1 })
 
-    await useTestExplorer.getState().exportReport('Product', null)
+    await useTestExplorer.getState().exportReport('Product', null, 'CSV')
 
-    expect(mockApi.exportReport).toHaveBeenCalledWith(1, 'Product', null)
+    expect(mockApi.exportReport).toHaveBeenCalledWith(1, 'Product', null, 'CSV')
     expect(useTestExplorer.getState().reports).toEqual([report])
   })
 })

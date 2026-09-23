@@ -1,10 +1,12 @@
 import type {
   CaseDetail,
+  CaseSearchRow,
   Category,
   Environment,
   GraphData,
   Product,
   ReportExport,
+  ReportFormat,
   ReportScope,
   Requirement,
   TestCase,
@@ -42,6 +44,20 @@ export const api = {
     }),
   listCategories: (productId: number, testTypeId: number) =>
     request<Category[]>(`/products/${productId}/test-types/${testTypeId}/categories`),
+  searchCases: (
+    productId: number,
+    testTypeId: number,
+    filters: { q?: string; priority?: string; module?: string },
+  ) => {
+    const params = new URLSearchParams()
+    if (filters.q) params.set('q', filters.q)
+    if (filters.priority) params.set('priority', filters.priority)
+    if (filters.module) params.set('module', filters.module)
+    const qs = params.toString()
+    return request<CaseSearchRow[]>(
+      `/products/${productId}/test-types/${testTypeId}/cases/search${qs ? `?${qs}` : ''}`,
+    )
+  },
   listRequirements: (productId: number) => request<Requirement[]>(`/products/${productId}/requirements`),
   createRequirement: (productId: number, title: string, description: string) =>
     request<Requirement>('/requirements', {
@@ -60,10 +76,10 @@ export const api = {
   getTypeTimeline: (productId: number, testTypeId: number) =>
     request<TypeTimelineRow[]>(`/products/${productId}/test-types/${testTypeId}/timeline`),
   listReports: (productId: number) => request<ReportExport[]>(`/products/${productId}/reports`),
-  exportReport: (productId: number, scope: ReportScope, suiteId: number | null) =>
+  exportReport: (productId: number, scope: ReportScope, suiteId: number | null, format: ReportFormat) =>
     request<ReportExport>('/reports/export', {
       method: 'POST',
-      body: JSON.stringify({ product_id: productId, scope, suite_id: suiteId }),
+      body: JSON.stringify({ product_id: productId, scope, suite_id: suiteId, format }),
     }),
   downloadReportUrl: (reportId: number) => `/api/reports/${reportId}/download`,
 }

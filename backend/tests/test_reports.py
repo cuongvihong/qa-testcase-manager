@@ -76,3 +76,81 @@ def test_download_report_returns_the_csv_content(client, product, suite):
 def test_download_nonexistent_report_returns_404(client):
     resp = client.get("/api/reports/999/download")
     assert resp.status_code == 404
+
+
+def test_export_report_as_pdf_creates_pdf_file(client, session, product, suite):
+    from app.models import CaseStatus, TestCase
+
+    session.add(TestCase(suite_id=suite.id, title="Case PDF", current_status=CaseStatus.PASS))
+    session.commit()
+
+    resp = client.post(
+        "/api/reports/export",
+        json={"product_id": product.id, "scope": "Product", "suite_id": None, "format": "PDF"},
+    )
+    assert resp.status_code == 200
+    report = resp.json()
+    assert report["format"] == "PDF"
+
+    from pathlib import Path
+
+    raw = Path(report["file_path"]).read_bytes()
+    assert raw.startswith(b"%PDF")
+
+
+def test_export_report_as_excel_creates_xlsx_file(client, session, product, suite):
+    from app.models import CaseStatus, TestCase
+
+    session.add(TestCase(suite_id=suite.id, title="Case Excel", current_status=CaseStatus.PASS))
+    session.commit()
+
+    resp = client.post(
+        "/api/reports/export",
+        json={"product_id": product.id, "scope": "Product", "suite_id": None, "format": "Excel"},
+    )
+    assert resp.status_code == 200
+    report = resp.json()
+    assert report["format"] == "Excel"
+
+    from pathlib import Path
+
+    raw = Path(report["file_path"]).read_bytes()
+    assert raw[:4] == b"PK\x03\x04"
+
+
+def test_download_pdf_report_returns_pdf_content_type(client, session, product, suite):
+    from app.models import CaseStatus, TestCase
+
+    session.add(TestCase(suite_id=suite.id, title="Case PDF DL", current_status=CaseStatus.PASS))
+    session.commit()
+
+    export_resp = client.post(
+        "/api/reports/export",
+        json={"product_id": product.id, "scope": "Product", "suite_id": None, "format": "PDF"},
+    )
+    report_id = export_resp.json()["id"]
+
+    resp = client.get(f"/api/reports/{report_id}/download")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "application/pdf"
+    assert resp.content.startswith(b"%PDF")
+
+
+def test_download_excel_report_returns_xlsx_content_type(client, session, product, suite):
+    from app.models import CaseStatus, TestCase
+
+    session.add(TestCase(suite_id=suite.id, title="Case Excel DL", current_status=CaseStatus.PASS))
+    session.commit()
+
+    export_resp = client.post(
+        "/api/reports/export",
+        json={"product_id": product.id, "scope": "Product", "suite_id": None, "format": "Excel"},
+    )
+    report_id = export_resp.json()["id"]
+
+    resp = client.get(f"/api/reports/{report_id}/download")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    assert resp.content[:4] == b"PK\x03\x04"

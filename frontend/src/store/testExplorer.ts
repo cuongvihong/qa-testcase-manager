@@ -2,11 +2,13 @@ import { create } from 'zustand'
 import { api } from '../api/client'
 import type {
   CaseDetail,
+  CaseSearchRow,
   Category,
   Environment,
   GraphData,
   Product,
   ReportExport,
+  ReportFormat,
   ReportScope,
   Requirement,
   TestCase,
@@ -16,6 +18,12 @@ import type {
   TypeTimelineRow,
 } from '../api/types'
 
+export interface CaseSearchQuery {
+  q: string | null
+  priority: string | null
+  module: string | null
+}
+
 interface TestExplorerState {
   products: Product[]
   testTypes: TestType[]
@@ -23,6 +31,8 @@ interface TestExplorerState {
   cases: TestCase[]
   environments: Environment[]
   categories: Category[]
+  caseSearchResults: CaseSearchRow[]
+  caseSearchQuery: CaseSearchQuery
   requirements: Requirement[]
   traceabilityMatrix: TraceabilityRow[]
   graphData: GraphData | null
@@ -44,13 +54,14 @@ interface TestExplorerState {
   createEnvironment: (name: string, deviceInfo: string | null) => Promise<void>
   loadCategories: () => Promise<void>
   selectCategory: (module: string | null) => void
+  searchCases: (query: CaseSearchQuery) => Promise<void>
   loadRequirements: () => Promise<void>
   createRequirement: (title: string, description: string) => Promise<void>
   linkCaseToRequirement: (requirementId: number, testCaseId: number) => Promise<void>
   loadGraphData: () => Promise<void>
   loadTypeTimeline: () => Promise<void>
   loadReports: () => Promise<void>
-  exportReport: (scope: ReportScope, suiteId: number | null) => Promise<void>
+  exportReport: (scope: ReportScope, suiteId: number | null, format: ReportFormat) => Promise<void>
 }
 
 const initialState = {
@@ -60,6 +71,8 @@ const initialState = {
   cases: [],
   environments: [],
   categories: [],
+  caseSearchResults: [],
+  caseSearchQuery: { q: null, priority: null, module: null },
   requirements: [],
   traceabilityMatrix: [],
   graphData: null,
@@ -107,6 +120,10 @@ export const useTestExplorer = create<TestExplorerState>((set, get) => ({
   },
 
   async selectSuite(suiteId) {
+    if (get().selectedSuiteId === suiteId) {
+      set({ selectedSuiteId: null, selectedCaseId: null, caseDetail: null, cases: [] })
+      return
+    }
     set({ selectedSuiteId: suiteId, selectedCaseId: null, caseDetail: null })
     const cases = await api.listCases(suiteId)
     set({ cases })
@@ -148,6 +165,18 @@ export const useTestExplorer = create<TestExplorerState>((set, get) => ({
 
   selectCategory(module) {
     set({ selectedCategoryModule: module })
+  },
+
+  async searchCases(query) {
+    const { selectedProductId, selectedTestTypeId } = get()
+    set({ caseSearchQuery: query })
+    if (selectedProductId === null || selectedTestTypeId === null) return
+    const filters: { q?: string; priority?: string; module?: string } = {}
+    if (query.q) filters.q = query.q
+    if (query.priority) filters.priority = query.priority
+    if (query.module) filters.module = query.module
+    const caseSearchResults = await api.searchCases(selectedProductId, selectedTestTypeId, filters)
+    set({ caseSearchResults })
   },
 
   async loadRequirements() {
@@ -200,10 +229,10 @@ export const useTestExplorer = create<TestExplorerState>((set, get) => ({
     set({ reports })
   },
 
-  async exportReport(scope, suiteId) {
+  async exportReport(scope, suiteId, format) {
     const { selectedProductId } = get()
     if (selectedProductId === null) return
-    await api.exportReport(selectedProductId, scope, suiteId)
+    await api.exportReport(selectedProductId, scope, suiteId, format)
     const reports = await api.listReports(selectedProductId)
     set({ reports })
   },

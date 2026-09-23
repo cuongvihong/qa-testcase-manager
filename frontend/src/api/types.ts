@@ -29,6 +29,7 @@ export interface TestSuite {
 }
 
 export type CaseStatus = 'Not Run' | 'In Progress' | 'Pass' | 'Fail' | 'Blocked' | 'Skipped'
+export type CaseExecutionType = 'Manual' | 'Automated'
 
 export interface TestCase {
   id: number
@@ -37,6 +38,9 @@ export interface TestCase {
   description: string
   current_status: CaseStatus
   is_auto_created: boolean
+  priority: SuitePriority
+  execution_type: CaseExecutionType
+  script_path: string | null
   created_at: string
   updated_at: string
 }
@@ -48,6 +52,7 @@ export interface TestRun {
   result: 'Pass' | 'Fail' | 'Blocked' | 'Skipped'
   build_version: string
   environment_id: number | null
+  environment_name: string | null
   error_note: string | null
   bug_ticket_link: string | null
   retry_of_run_id: number | null
@@ -72,6 +77,16 @@ export interface Category {
   suiteIds: number[]
   caseCount: number
   passRate: number
+}
+
+export interface CaseSearchRow {
+  id: number
+  title: string
+  suite_id: number
+  suite_name: string
+  module: string
+  priority: SuitePriority
+  current_status: CaseStatus
 }
 
 export interface Requirement {
@@ -110,12 +125,13 @@ export interface TypeTimelineRow {
 }
 
 export type ReportScope = 'Product' | 'Suite'
+export type ReportFormat = 'PDF' | 'Excel' | 'CSV'
 
 export interface ReportExport {
   id: number
   product_id: number
   scope: string
-  format: 'PDF' | 'Excel' | 'CSV'
+  format: ReportFormat
   exported_by: number | null
   exported_at: string
   file_path: string | null
